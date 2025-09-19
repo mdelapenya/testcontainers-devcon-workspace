@@ -1,0 +1,22 @@
+pluginManagement {
+	repositories {
+		mavenLocal()
+		gradlePluginPortal()
+		mavenCentral()
+		maven {
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
+		}
+	}
+}
+
+dependencyResolutionManagement {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven {
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
+		}
+	}
+}
+
+rootProject.name = 'test-project'
