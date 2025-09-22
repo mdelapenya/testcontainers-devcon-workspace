@@ -1,7 +1,5 @@
-// Check GETTING_STARTED.md for information regarding usage.
-
 plugins {
-	id 'java-gradle-plugin'  // Changed from 'groovy-gradle-plugin'
+	id 'java-gradle-plugin'
 	id 'maven-publish'
 }
 
@@ -9,14 +7,17 @@ repositories {
 	mavenLocal()
 	gradlePluginPortal()
 	mavenCentral()
-	maven {
-		url "https://repository-cdn.liferay.com/nexus/content/groups/public"
-	}
+	maven { url "https://repository-cdn.liferay.com/nexus/content/groups/public" }
 }
 
 dependencies {
-	implementation 'org.testcontainers:testcontainers:1.21.3'
+	implementation platform('org.testcontainers:testcontainers-bom:1.21.3')
+	implementation 'org.testcontainers:testcontainers'
 	implementation gradleApi()
+}
+
+configurations.all {
+	exclude group: 'com.github.docker-java'
 }
 
 gradlePlugin {

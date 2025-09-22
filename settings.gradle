@@ -1,6 +1,27 @@
+pluginManagement {
+	// Use the plugin from the local build instead of the published one
+	includeBuild('testcontainers-plugin')
+
+	repositories {
+		mavenLocal()
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url "https://repository-cdn.liferay.com/nexus/content/groups/public" }
+	}
+}
+
+dependencyResolutionManagement {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		gradlePluginPortal()
+		maven { url "https://repository-cdn.liferay.com/nexus/content/groups/public" }
+	}
+}
+
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.workspace", version: "13.1.0"
+		classpath "com.liferay:com.liferay.gradle.plugins.workspace:13.1.0"
 	}
 
 	repositories {
@@ -13,3 +34,6 @@ buildscript {
 }
 
 apply plugin: "com.liferay.workspace"
+
+// IMPORTANT: only include the example as a subproject.
+include 'testcontainers-plugin-example'
