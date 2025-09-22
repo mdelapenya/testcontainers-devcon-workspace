@@ -1,11 +1,26 @@
 package com.liferay.gradle.plugins.testcontainers;
 
+import javax.inject.Inject;
+
 import org.gradle.api.DefaultTask;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.workers.WorkerExecutor;
+
+import com.liferay.gradle.plugins.testcontainers.internal.RunAction;
+
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 public class RunTask extends DefaultTask {
+
+	private final WorkerExecutor workers;
+
+	@Inject
+	public RunTask(WorkerExecutor workers) {
+		this.workers = workers;
+	}
 
 	@TaskAction
 	public void runContainer() {
@@ -16,25 +31,30 @@ public class RunTask extends DefaultTask {
 			// Get the Liferay product version from gradle properties
 			Object productValue = getProject().findProperty("liferay.workspace.product");
 
-			if (productValue != null && productValue.toString().startsWith("dxp-")) {
-				String version = productValue.toString().substring(4); // Remove 'dxp-' prefix
-				String imageName = "liferay/dxp:" + version;
-
-				System.out.println("Testcontainers initialized successfully");
-				System.out.println("Would run container with image: " + imageName);
-
-				// TODO: Implement actual container creation and start logic here
-				// This is where you'll add the Testcontainers logic to:
-				// 1. Create the container
-				// 2. Configure ports, environment variables, volumes
-				// 3. Start the container
-				// 4. Wait for it to be ready
-
-				run(imageName);
-
-			} else {
+			if (productValue == null || !productValue.toString().startsWith("dxp-")) {
 				System.out.println("Invalid or missing liferay.workspace.product property");
+				return;
 			}
+
+			String version = productValue.toString().substring(4); // Remove 'dxp-' prefix
+			String imageName = "liferay/dxp:" + version;
+
+			System.out.println("Testcontainers initialized successfully");
+			System.out.println("Would run container with image: " + imageName);
+			System.out.println("Creating Testcontainers setup for: " + imageName);
+
+			// build an isolated classpath just for Testcontainers
+			DependencyHandler deps = getProject().getDependencies();
+			Configuration tcCp = getProject().getConfigurations().detachedConfiguration(
+				deps.create("org.testcontainers:testcontainers:1.21.3")
+			);
+
+			// Run in an isolated classloader that only sees Testcontainers (shaded docker-java)
+			workers.classLoaderIsolation(spec ->
+				spec.getClasspath().from(tcCp)   // use the detached classpath here
+			).submit(RunAction.class, params ->
+				params.getImageName().set(imageName)
+			);
 		} catch (Exception e) {
 			getLogger().error("Failed to run Liferay container", e);
 			throw new RuntimeException("Container execution failed", e);
